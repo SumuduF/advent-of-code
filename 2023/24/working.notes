@@ -1,0 +1,97 @@
+rock at initial position r and velocity w
+then for each hailstone pi, vi
+there must be a time ti s.t.
+r + ti*w = pi + ti*vi
+suppose I fix a w
+then r = pi + ti*(vi-w) => r must lie somewhere on the ray defined by (pi, vi-w)
+so we have to adjust the velocities so that all the rays (pi, vi-w) go through a single (integer) point
+
+take just two rays
+what common w values can make them intersect?
+
+z being on line (p, v) is same as saying z x v == p x v
+so given (p1, v1), (p2, v2), if they have an intersection z then it
+must be that (p1 - p2) . (v1 x v2) == 0 [(p1-p2) and (v1xv2) are perp.]
+and also that (v1 x v2) != 0
+
+how does v1 x v2 change when subtracting w
+(v1 - w) x (v2 - w) = (v1 x v2) - (v1 x w) + (v2 x w)
+= (v1 x v2) - [(v1 - v2) x w]
+
+so p12 . (v1'xv2') = p12 . [(v1 x v2) - (v1-v2)xw] = p12.(v1xv2) - p12.(v1-v2)xw
+so choose w s.t. p12.(v1-v2)xw = p12.(v1xv2)
+let p12.(v1xv2) = M
+(p1-p2).(v1xw-v2xw) = M
+p12 . (v12 x w) = M is scalar triple product
+so M = v12 . (w x p12) = w . (p12 x v12)
+w . A = b with A, b constants defines a plane:
+a plane going through p with normal n has equation (z-p).n = 0 -> z.n = p.n
+
+here we have w . (p12xv12) = p12.(v1xv2)
+
+to find a point on the plane z.n = K
+take any point P
+and write z = P - t*n
+(P-t*n).n = K
+(P.n-t*n.n) = K
+t = (P.n - K) / (n.n)
+
+then using different pairs of p12 we find three planes for w:
+w . A = p
+w . B = q
+w . C = r
+
+then writing w = a(BxC) + b(CxA) + c(AxB)
+p = w.A = aA.(BxC)
+q = w.B = bB.(CxA)
+r = w.C = cC.(AxB)
+so a = p/[triple product], b = q/[triple product], c = r/[triple product]
+
+with example
+p1 19,13,30 v1 -2,1,-2
+p2 18,19,22 v2 -1,-1,-2
+p3 20,19,15 v3 1, -5, -3
+
+p12 = 1, -6, 8
+v12 = -1, 2, 0
+v1 x v2 = -4, -2, 3
+M12 = p12.(v1xv2) = 32
+p12 x v12 = -16, -8, -4
+w . (-16, -8, -4) = 32
+A = -16, -8, -4 ; p = 32
+
+p13 = -1, -6, 15
+v13 = -3, 6, 1
+v1 x v3 = -13, -8, 9
+M13 = p13.(v1xv3) = 196
+p13 x v13 = -96, -44, -24
+w . (-96, -44, -24) = 196
+B = -96, -44, -24 ; q = 196
+
+p23 = -2, 0, 7
+v23 = -2, 4, 1
+v2 x v3 = -7, -5, 6
+M23 = p23 . (v2xv3) = 56
+p23 x v23 = -28, -12, -8
+w . (-28, -12, -8) = 56
+C = -28, -12, -8 ; r = 56
+
+triple product = A . (B x C) = 64
+w = (32/64)*(BxC) + (196/64)*(CxA) + (56/64)*(AxB)
+  = (1/2)(64, -96, -80) + (49/16)(-16, 16, 32) + (7/8)(16, 0, -64)
+  = (32, -48, -40) + (-49, 49, 98) + (14, 0, -56)
+  = (-3, 1, 2)
+
+Then taking any two (p1, v1'), (p2, v2') (v' = v - w),
+r = their intersection point
+v = (v1' x v2'), G = p1 . v
+r = (1/|v|^2) (v1[p2xv2 . v] - v2[p1xv1 . v] + Gv)
+
+p1 19,13,30 v1' 1, 0, -4
+p2 18,19,22 v2' 2, -2, -4
+
+v = -8, -4, -2
+G = -264
+r = (1/84)((1,0,-4)*(-60) - (2,-2,-4)*18 - 264(-8,-4,-2))
+r = (1/84)((-60, 0, 240) - (36, -36, -72) - (-2112, -1056, -528))
+r = (1/84)(2016, 1092, 840) = (24, 13, 10)
