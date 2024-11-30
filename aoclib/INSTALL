@@ -1,0 +1,3 @@
+- setup a venv (python3 -m venv)
+- activate venv
+- pip install -e aoclib
