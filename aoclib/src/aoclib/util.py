@@ -1,6 +1,6 @@
 import argparse
 import sys
-from itertools import islice
+from itertools import islice, groupby
 
 def run_solution(solution):
     """Basic AoC main: takes care of getting input and printing the answer."""
@@ -28,6 +28,12 @@ def batched(iterable, n):
     it = iter(iterable)
     while batch := tuple(islice(it, n)):
         yield batch
+
+# split lines into groups separated by blank lines
+def line_groups(lines):
+    for is_group, g in groupby(lines, bool):
+        if not is_group: continue
+        yield list(g)
 
 # python3 killed cmp for some reason
 def cmp(a, b):
