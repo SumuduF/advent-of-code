@@ -15,21 +15,21 @@ applied in order to produce rich return values.
 
 Example usage:
 
-from aoclib.parsing import Tagged, regex, seplist
+from aoclib.parsing import regex, seplist
 from functools import cache
 
 @cache
 def foo_parser():
-    add_op = regex("plus ([0-9]+)").conv(int).tag("plus")
-    sub_op = regex("minus ([0-9]+)").conv(int).tag("minus")
+    add_op = regex("(plus) ([0-9]+)").zipconv(None, int)
+    sub_op = regex("(minus) ([0-9]+)").zipconv(None, int)
     return seplist(add_op | sub_op, ",")
 
 def process(s):
     result = 0
     for op in foo_parser().parse(s):
         match op:
-            case Tagged("plus", val): result += val
-            case Tagged("minus", val): result -= val
+            case ("plus", val): result += val
+            case ("minus", val): result -= val
     return result
 
 print(process("plus 1, minus 2, plus 3, minus 4"))
@@ -150,8 +150,9 @@ class Parser:
         """
         Specifies a tag to attach to the final result.
 
-        Then the result will be returned as a Parser.Tagged NamedTuple
-        (this may be particularly useful in match statements).
+        Then the result will be returned as a (tag, value) tuple (this may be
+        particularly useful in match statements or for combining parse results
+        into a dict).
         """
         if self._tag == tag: return self
         return self._copy_with(tag=tag)
@@ -188,7 +189,7 @@ class Parser:
             elif result is None:
                 return None
         if self._tag is not None:
-            result = Tagged(tag=self._tag, result=result)
+            result = _Tagged(tag=self._tag, result=result)
         if self._trim_ws:
             new_i = self.__WS_PATT.match(s, new_i).end()
         return (result, new_i)
@@ -204,56 +205,10 @@ class Parser:
         if parse_ret[1] != len(s): return None
         return parse_ret[0]
 
-class Tagged(NamedTuple):
+class _Tagged(NamedTuple):
     """Represents tagged parse results."""
     tag: Any
     result: Any
-
-class Dynamic():
-    """Encapsulates a dynamic variable used for context-aware parsing."""
-    def __init__(self, reads=1):
-        """
-        Create a new dynamic variable with the expected number of derefs.
-
-        Read attempts will fail after the specified number have been done.
-        Write attempts will fail if a previous value was set and its reads
-        haven't been exhausted.
-        """
-        self._reads = reads
-        self._reads_left = 0
-
-    __slots__ = ("_reads", "_reads_left", "_value")
-
-    def set(self, value):
-        """
-        Captures a value. Suitable for passing into Parser.conv().
-
-        Fails if this variable has already captured a value that has not yet
-        been consumed.
-        """
-        assert self._reads_left == 0, "Attempted to set unconsumed value!"
-        self._value = value
-        self._reads_left = self._reads
-        return value
-
-    def get(self):
-        """
-        Returns captured value.
-
-        Fails if this variable hasn't captured a value yet, or if the captured
-        value has already been fully consumed.
-        """
-        assert self._reads_left > 0, "Attempted to read exhausted value!"
-        self._reads_left -= 1
-        return self._value
-
-    @staticmethod
-    def value_of(var):
-        """Helper function for consumers of (possibly) dynamic variables."""
-        if isinstance(var, Dynamic):
-            return var.get()
-        else:
-            return var
 
 def recursive(recipe_fn, arity=1):
     """
@@ -291,18 +246,41 @@ def recursive(recipe_fn, arity=1):
             tbd.set_ref(actual)
         return actuals
 
+def contextual(context_parser: Parser, recipe_fn):
+    """
+    Helper for defining a contextual Parser (whose behavior depends on what has
+    been parsed before).
+
+    context_parser is a Parser that will be run first and produces the context
+    as result. If it fails then the overall contextual parse will fail.
+
+    recipe_fn shall take that result as argument and return a Parser.
+
+    The Parser returned by contextual() will parse the context, use the recipe
+    to create a contextual parser, and then run that; the overall result will
+    be the same as produced by the contextual parser (meaning the result of
+    the context_parser is implicitly dropped, but note that the recipe may
+    choose to include it in the result).
+    """
+
+    def parse_fn(s, i):
+        context_ret = context_parser.run(s, i)
+        if context_ret is None: return None
+
+        context, ni = context_ret
+        return recipe_fn(context).run(s, ni)
+    return Parser(parse_fn)
+
 @cache
-def ex(z: str | Dynamic):
+def ex(z: str):
     """
     Creates a Parser consuming an exact string (also trims whitespace).
 
-    The string can be a dynamic value. The result is always None (like with
-    "skip()").
+    The result is always None (like with "skip()").
     """
     def parse_fn(s, i):
-        z_ = Dynamic.value_of(z)
-        if not s.startswith(z_, i): return None
-        return (None, i + len(z_))
+        if not s.startswith(z, i): return None
+        return (None, i + len(z))
     return Parser(parse_fn, trim_ws=True)
 
 @cache
@@ -333,16 +311,13 @@ def regex(z: str):
     return Parser(parse_fn, trim_ws=True)
 
 @cache
-def chomp(n: int | Dynamic):
+def chomp(n: int):
     """
     A Parser that consumes and returns the given number of characters.
-
-    The number can be a dynamic value.
     """
     def parse_fn(s, i):
-        n_ = Dynamic.value_of(n)
-        if not i + n_ <= len(s): return None
-        return (s[i:i+n_], i + n_)
+        if not i + n <= len(s): return None
+        return (s[i:i+n], i + n)
     return Parser(parse_fn)
 
 def star(p: Parser, at_least=0, at_most=None):
@@ -350,19 +325,16 @@ def star(p: Parser, at_least=0, at_most=None):
     Creates a Parser that repeats the given Parser as many times as it can
     within the specified bounds.
 
-    Defaults to accepting any number of repeats (including 0). The bounds may
-    be specified using dynamic values.
+    Defaults to accepting any number of repeats (including 0).
 
     The result is a list of the constituent results, discarding None's and
     flattening sub-lists. Note: other types of iterables like tuples are not
     flattened.
     """
     def parse_fn(s, i):
-        at_least_ = Dynamic.value_of(at_least)
-        at_most_ = Dynamic.value_of(at_most)
         rep_count = 0
         results = []
-        while (at_most_ is None) or (rep_count < at_most_):
+        while (at_most is None) or (rep_count < at_most):
             parse_ret = p.run(s, i)
             if parse_ret is None: break
 
@@ -371,27 +343,10 @@ def star(p: Parser, at_least=0, at_most=None):
             _add_result(results, nxt_result)
             i = nxt_i
 
-        if rep_count < at_least_:
+        if rep_count < at_least:
             return None
         else:
             return (results, i)
-    return Parser(parse_fn)
-
-def branch(parser_chooser):
-    """
-    Branches to a dynamically-chosen Parser.
-
-    "parser_chooser" shall be a function that returns a Parser: branch will
-    invoke this function at parse time and then run that Parser.
-    "parser_chooser" would typically involve some logic driven by dynamic
-    variables to decide which Parser should be used.
-
-    "parser_chooser" can return None to fail the parse.
-    """
-    def parse_fn(s, i):
-        choice = parser_chooser()
-        if choice is None: return None
-        return choice.run(s, i)
     return Parser(parse_fn)
 
 def seplist(p: Parser, sep: str):

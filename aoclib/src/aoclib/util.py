@@ -38,29 +38,3 @@ def line_groups(lines):
 # python3 killed cmp for some reason
 def cmp(a, b):
     return (a > b) - (a < b)
-
-class Fenwick():
-    """Implements a Fenwick tree."""
-
-    def __init__(self, n: int):
-        """Creates an empty (all zeros) tree on n elements."""
-        self._n = n
-        self._v = [0]*n
-
-    def add(self, val: int, i: int):
-        """Adds val to position i."""
-        # Note, internally the math is done with 1-based indices
-        i += 1
-        while i <= self._n:
-            self._v[i-1] += val
-            i += i & (-i)
-
-    def cumul(self, i: int):
-        """Returns the sum of values up to position i (inclusive)."""
-        # Note, internally the math is done with 1-based indices
-        i += 1
-        ret = 0
-        while i > 0:
-            ret += self._v[i-1]
-            i -= i & (-i)
-        return ret
