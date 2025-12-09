@@ -38,3 +38,7 @@ def line_groups(lines):
 # python3 killed cmp for some reason
 def cmp(a, b):
     return (a > b) - (a < b)
+
+# handy for normalizing range endpoint order
+def minmax(a, b):
+    return (min(a, b), max(a, b))
