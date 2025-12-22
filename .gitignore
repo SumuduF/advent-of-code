@@ -1,7 +1,13 @@
 # avoid including input / test data files
 *.txt
 
-# intermediate build/lib files
+# Python-generated files
 __pycache__/
-*.py[cod]
+*.py[oc]
+build/
+dist/
+wheels/
 *.egg-info
+
+# Virtual environments
+.venv

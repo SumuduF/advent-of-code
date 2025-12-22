@@ -1,0 +1,13 @@
+[project]
+name = "advent"
+version = "0.1.0"
+description = "Solutions for Advent of Code"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aoclib",
+]
+
+[tool.uv.sources]
+aoclib = { git = "https://github.com/SumuduF/aoclib.git" }
+
