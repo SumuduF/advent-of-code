@@ -1,3 +1,5 @@
+#!/usr/bin/env -S uv run
+
 from aoclib import util
 
 def solution(input_lines):

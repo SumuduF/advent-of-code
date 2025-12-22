@@ -1,3 +1,5 @@
+#!/usr/bin/env -S uv run
+
 from aoclib import util
 from aoclib.struct import Point2
 from bisect import bisect

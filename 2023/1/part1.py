@@ -1,3 +1,5 @@
+#!/usr/bin/env -S uv run
+
 f = open("input.txt", "r")
 
 vals = []

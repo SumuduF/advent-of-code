@@ -1,3 +1,5 @@
+#!/usr/bin/env -S uv run
+
 from aoclib import util, struct
 from aoclib.struct import Point3
 from collections import defaultdict, deque

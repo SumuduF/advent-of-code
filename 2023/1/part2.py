@@ -1,3 +1,5 @@
+#!/usr/bin/env -S uv run
+
 DIGMAP = {
   "one" : 1, "1" : 1,
   "two" : 2, "2" : 2,

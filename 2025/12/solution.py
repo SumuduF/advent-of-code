@@ -1,3 +1,5 @@
+#!/usr/bin/env -S uv run
+
 from aoclib import util
 from aoclib.grids import gnumerate, grid_getter
 from aoclib.struct import Point2
