@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "aoclib",
+    "z3-solver>=4.15.4.0",
 ]
 
 [tool.uv.sources]
