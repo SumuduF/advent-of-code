@@ -20,7 +20,7 @@ requires-dist = [
 [[package]]
 name = "aoclib"
 version = "0.1.0"
-source = { git = "https://github.com/SumuduF/aoclib.git#6355e75ef8ac584c2965297e715469eaa110fa29" }
+source = { git = "https://github.com/SumuduF/aoclib.git#416d012777b07f53672f65cea38ce3607c7c5479" }
 
 [[package]]
 name = "z3-solver"
